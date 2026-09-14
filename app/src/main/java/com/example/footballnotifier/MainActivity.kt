@@ -1,5 +1,6 @@
 package com.example.footballnotifier
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.work.*
 import java.util.concurrent.TimeUnit
@@ -20,7 +22,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // جدولة العمل في الخلفية
         scheduleNotificationWorker()
 
         setContent {
@@ -41,7 +42,7 @@ class MainActivity : ComponentActivity() {
             .build()
 
         val workRequest = PeriodicWorkRequestBuilder<FootballNotificationWorker>(
-            15, TimeUnit.MINUTES // الحد الأدنى الذي يسمح به أندرويد
+            15, TimeUnit.MINUTES
         )
             .setConstraints(constraints)
             .build()
@@ -54,10 +55,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// --- واجهة المستخدم ---
-
 @Composable
 fun LeagueSelectionScreen() {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("football_prefs", Context.MODE_PRIVATE) }
+
     val leagues = listOf(
         League("premier_league", "الدوري الإنجليزي"),
         League("la_liga", "الدوري الإسباني"),
@@ -66,7 +68,13 @@ fun LeagueSelectionScreen() {
         League("ligue_1", "الدوري الفرنسي")
     )
 
-    val selectedLeagues = remember { mutableStateMapOf<String, Boolean>() }
+    val selectedLeagues = remember { 
+        mutableStateMapOf<String, Boolean>().apply {
+            leagues.forEach { league ->
+                put(league.id, prefs.getBoolean(league.id, false))
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -86,6 +94,7 @@ fun LeagueSelectionScreen() {
                     isSelected = selectedLeagues[league.id] ?: false,
                     onSelectionChanged = { isSelected ->
                         selectedLeagues[league.id] = isSelected
+                        prefs.edit().putBoolean(league.id, isSelected).apply()
                     }
                 )
             }
