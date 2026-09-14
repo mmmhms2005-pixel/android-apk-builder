@@ -24,8 +24,10 @@ jobs:
       with:
         gradle-version: 8.7
 
-    - name: Remove res directory
-      run: rm -rf app/src/main/res
+    - name: Remove unused directories
+      run: |
+        rm -rf app/src/main/res
+        rm -rf app/src/main/java/com/example/sampleapp
 
     - name: Generate Gradle Wrapper
       run: gradle wrapper --gradle-version 8.7
